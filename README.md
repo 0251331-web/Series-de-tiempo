@@ -1,383 +1,391 @@
 # Series_de_tiempo
 
-# 📈 Series de Tiempo – Fundamentos y Aplicaciones
+## I. Propósito
 
-Repositorio académico para el estudio teórico y aplicado de **Series de Tiempo**, con énfasis en modelos econométricos clásicos y financieros utilizados para análisis, modelación y pronóstico de variables económicas y financieras.
+Este repositorio documenta el trabajo desarrollado en el curso de **Series de Tiempo Aplicadas a Finanzas**. El objetivo central fue comprender cómo modelar, interpretar y pronosticar variables económicas y financieras cuya evolución depende explícitamente del tiempo.
 
-El objetivo es comprender los procesos estocásticos que generan los datos observados, identificar patrones temporales, construir modelos estadísticos adecuados y generar pronósticos robustos para la toma de decisiones.
+A diferencia de los modelos tradicionales de corte transversal, donde el orden de las observaciones es irrelevante, en una serie de tiempo el pasado contiene información potencialmente útil para explicar el presente y anticipar el futuro. Esta característica convierte al tiempo en una variable fundamental dentro del análisis.
 
----
-
-## 📚 Contenido del curso
-
-### 1️⃣ Introducción a Series de Tiempo
-
-#### 🔹 Conceptos fundamentales
-
-- ¿Qué es una serie de tiempo?
-- Dependencia temporal
-- Componentes de una serie
-- Predicción y pronóstico
-
-#### 🔹 Componentes principales
-
-- Tendencia
-- Estacionalidad
-- Ciclo
-- Componente irregular
-- Ruido aleatorio
+Las aplicaciones estudiadas incluyen precios de activos financieros, rendimientos bursátiles, inflación, exportaciones, ventas comerciales, producción industrial, volatilidad y riesgo de mercado.
 
 ---
 
-### 📊 Visualización y Exploración de Datos
+# II. Teorema Fundamental de las Series de Tiempo: Toda serie debe entenderse antes de modelarse
 
-#### Análisis Exploratorio
+El primer principio del análisis temporal establece que ningún modelo debe estimarse antes de comprender la estructura de los datos.
 
-- Gráficas temporales
-- Estadísticos descriptivos
-- Identificación de patrones
-- Detección de valores atípicos
+Toda serie puede contener una combinación de:
 
-#### Transformaciones Comunes
+* Tendencia
+* Estacionalidad
+* Ciclos
+* Ruido
+* Cambios estructurales
+* Valores atípicos
+* Dependencia temporal
+* Volatilidad variable
 
-- Logaritmos
-- Diferenciación
-- Tasas de crecimiento
-- Rendimientos
-
----
-
-### 2️⃣ Estacionariedad
-
-#### 🔹 Conceptos
-
-- Estacionariedad estricta
-- Estacionariedad débil
-- Media constante
-- Varianza constante
-- Covarianza constante
-
-#### 🔹 Pruebas de Raíz Unitaria
-
-- Dickey-Fuller (DF)
-- Augmented Dickey-Fuller (ADF)
-- Phillips-Perron (PP)
-
-#### 🔹 Transformaciones para Estacionariedad
-
-- Diferencias regulares
-- Diferencias estacionales
-- Eliminación de tendencia
+La inspección gráfica constituye el primer diagnóstico. En la práctica profesional, esta etapa funciona como un *screening* preliminar que permite identificar comportamientos que posteriormente deberán ser capturados por el modelo.
 
 ---
 
-### 3️⃣ Modelos ARIMA
+# III. Teorema de la Estacionariedad
 
-#### 🔹 Modelo Autorregresivo (AR)
+La estacionariedad constituye la hipótesis fundamental detrás de la mayoría de los modelos clásicos de series de tiempo.
 
-AR(p)
+Una serie estacionaria mantiene propiedades estadísticas constantes a través del tiempo.
 
-- Dependencia de rezagos
-- Condiciones de estacionariedad
-- Interpretación de parámetros
+Formalmente:
 
-#### 🔹 Modelo de Medias Móviles (MA)
+E(y_t)=μ
 
-MA(q)
+Var(y_t)=σ²
 
-- Choques aleatorios
-- Efectos transitorios
-- Invertibilidad
+Cov(y_t,y_(t-k))=γ_k
 
-#### 🔹 Modelo ARMA
+La importancia de esta propiedad radica en que permite extrapolar patrones observados en el pasado hacia el futuro.
+
+Cuando una serie no es estacionaria, los parámetros estimados pueden resultar inconsistentes y producir relaciones espurias.
+
+---
+
+# IV. Teorema de la Raíz Unitaria
+
+Una raíz unitaria implica que los shocks tienen efectos permanentes sobre la trayectoria de la serie.
+
+Si una perturbación modifica el nivel de la serie y dicho efecto no desaparece con el tiempo, la serie posee raíz unitaria.
+
+La prueba principal estudiada fue la prueba Augmented Dickey-Fuller (ADF).
+
+Hipótesis:
+
+H₀: La serie posee raíz unitaria.
+
+H₁: La serie es estacionaria.
+
+La decisión se basa en el valor p.
+
+La prueba ADF constituye uno de los pilares de la metodología Box-Jenkins.
+
+---
+
+# V. Teorema de las Transformaciones
+
+No toda serie es modelable en su estado original.
+
+Frecuentemente es necesario aplicar transformaciones que permitan estabilizar la estructura estadística.
+
+## Logaritmos
+
+Los logaritmos convierten cambios absolutos en cambios relativos.
+
+ln(y_t)
+
+Son especialmente útiles cuando la varianza crece con el nivel de la serie.
+
+## Diferencias
+
+La diferenciación elimina tendencia estocástica.
+
+Δy_t = y_t - y_(t-1)
+
+## Diferencias Estacionales
+
+Δ_s y_t = y_t - y_(t-s)
+
+Permiten eliminar patrones periódicos recurrentes.
+
+---
+
+# VI. Teorema de la Dependencia Temporal
+
+La dependencia temporal se estudia mediante dos herramientas fundamentales:
+
+## ACF
+
+Autocorrelation Function.
+
+Mide la relación entre una observación y sus rezagos.
+
+## PACF
+
+Partial Autocorrelation Function.
+
+Mide la relación directa entre una observación y un rezago específico, eliminando el efecto de los rezagos intermedios.
+
+Estas funciones constituyen la principal herramienta de identificación de modelos.
+
+---
+
+# VII. Teorema Autorregresivo
+
+Los modelos AR suponen que el presente depende de observaciones pasadas.
+
+AR(p):
+
+y_t = c + φ₁y_(t-1) + ... + φ_py_(t-p) + ε_t
+
+La memoria del proceso queda resumida en el parámetro p.
+
+---
+
+# VIII. Teorema de Media Móvil
+
+Los modelos MA explican la serie mediante errores pasados.
+
+MA(q):
+
+y_t = μ + ε_t + θ₁ε_(t-1) + ... + θ_qε_(t-q)
+
+Aquí la memoria no proviene de la serie misma, sino de los shocks históricos.
+
+---
+
+# IX. Teorema ARMA
+
+ARMA combina estructura autorregresiva y estructura de errores.
 
 ARMA(p,q)
 
-- Combinación AR y MA
-- Identificación de parámetros
-- Estimación
+Permite modelar procesos estacionarios con memoria y persistencia.
 
-#### 🔹 Modelo ARIMA
+---
+
+# X. Teorema de Integración
+
+Cuando la serie no es estacionaria se introduce el concepto de integración.
 
 ARIMA(p,d,q)
 
-- Integración mediante diferenciación
-- Procesos no estacionarios
-- Pronósticos
+d representa el número de diferencias requeridas para alcanzar estacionariedad.
+
+La integración conecta la teoría de series estacionarias con variables económicas reales que suelen presentar tendencia.
 
 ---
 
-### 📈 Identificación del Modelo
+# XI. Teorema de la Estacionalidad
 
-#### Función de Autocorrelación (ACF)
+Las series económicas frecuentemente contienen patrones recurrentes.
 
-- Identificación de componentes MA
-- Persistencia temporal
-- Correlogramas
-
-#### Función de Autocorrelación Parcial (PACF)
-
-- Identificación de componentes AR
-- Rezagos significativos
-
----
-
-### 4️⃣ Modelos SARIMA
-
-#### 🔹 Componentes Estacionales
+Para capturarlos se utiliza:
 
 SARIMA(p,d,q)(P,D,Q)s
 
-- Autorregresión estacional
-- Diferenciación estacional
-- Media móvil estacional
-- Periodicidad
+donde s representa el periodo estacional.
 
-#### Aplicaciones
-
-- Series mensuales
-- Series trimestrales
-- Variables económicas con estacionalidad
+Este modelo incorpora simultáneamente dinámica de corto plazo y dinámica estacional.
 
 ---
 
-### 📊 Selección de Modelos
+# XII. Teorema de las Variables Exógenas
 
-#### Principio de Parsimonia
+La historia no siempre contiene toda la información relevante.
 
-- Modelos simples
-- Balance entre ajuste y complejidad
+SARIMAX permite incorporar variables explicativas externas.
 
-#### Criterios de Información
+Ejemplos:
 
-##### AIC
+* Promociones
+* Días festivos
+* Tasas de interés
+* Tipo de cambio
+* Producción industrial
 
-Akaike Information Criterion
-
-- Comparación de modelos
-- Penalización por complejidad
-
-##### BIC
-
-Bayesian Information Criterion
-
-- Selección conservadora
-- Penalización más fuerte
-
-#### Log-Verosimilitud
-
-- Máxima verosimilitud
-- Comparación estadística
+El modelo deja de ser puramente autorreferencial y se convierte en una herramienta explicativa.
 
 ---
 
-### 5️⃣ Diagnóstico de Modelos
+# XIII. Teorema Box-Jenkins
 
-#### Análisis de Residuos
+La metodología Box-Jenkins constituye el framework clásico de construcción de modelos.
 
-- Residuos estandarizados
-- Ruido blanco
-- Independencia temporal
+Etapas:
 
-#### Prueba Ljung-Box
+I. Identificación
 
-- Autocorrelación residual
-- Validación del modelo
+II. Estimación
 
-#### Normalidad
+III. Diagnóstico
 
-- Jarque-Bera
-- Curtosis
-- Asimetría
+IV. Pronóstico
+
+Su importancia radica en que transforma la modelación en un proceso sistemático.
 
 ---
 
-### 6️⃣ Modelos con Variables Exógenas
+# XIV. Teorema de la Parsimonia
 
-#### 🔹 ARIMAX
+Un modelo más complejo no necesariamente es mejor.
 
-ARIMA con regresores externos
+La selección se apoya en:
 
-- Variables explicativas
-- Interpretación económica
-- Pronósticos condicionados
+* AIC
+* BIC
+* Log-Likelihood
 
-#### 🔹 SARIMAX
-
-SARIMA con variables exógenas
-
-- Componentes estacionales
-- Variables macroeconómicas
-- Pronósticos multivariados
+El objetivo es encontrar el equilibrio óptimo entre ajuste y complejidad.
 
 ---
 
-### 📈 Caso de Estudio: Exportaciones de México
+# XV. Teorema del Residuo Blanco
 
-#### Variables utilizadas
+Un modelo adecuado debe dejar residuos sin estructura.
 
-- Exportaciones mexicanas
-- Índice de Producción Industrial de EE.UU.
-- Componentes estacionales mensuales
+Los residuos deben comportarse como ruido blanco.
 
-#### Objetivos
+Para verificarlo se utilizan:
 
-- Modelar exportaciones
-- Evaluar impacto de variables externas
-- Generar pronósticos
-
----
-
-### 7️⃣ Series de Tiempo Financieras
-
-#### Características de los Rendimientos
-
-- No normalidad
-- Asimetría
-- Leptocurtosis
-- Clustering de volatilidad
-
-#### Propiedades Empíricas
-
-- Volatilidad variable
-- Dependencia temporal en la varianza
-- Colas pesadas
+* ACF residual
+* PACF residual
+* Ljung-Box
+* Histogramas
+* QQ-Plots
 
 ---
 
-### 8️⃣ Modelos ARCH y GARCH
+# XVI. Teorema del Pronóstico
 
-#### 🔹 ARCH
+Pronosticar no significa adivinar.
 
-Autoregressive Conditional Heteroskedasticity
+Un pronóstico representa una distribución condicional basada en información histórica.
 
-- Heterocedasticidad condicional
-- Volatilidad dependiente del pasado
+Todo forecast debe acompañarse de:
 
-#### 🔹 GARCH
-
-Generalized ARCH
-
-GARCH(p,q)
-
-- Persistencia de volatilidad
-- Volatilidad de largo plazo
-- Pronóstico de riesgo
-
-#### Aplicaciones
-
-- Mercados financieros
-- Gestión de riesgos
-- Pronóstico de volatilidad
+* Valor esperado
+* Intervalos de confianza
+* Horizonte temporal
+* Supuestos
 
 ---
 
-### 9️⃣ Modelos Asimétricos de Volatilidad
+# XVII. Teorema de los Rendimientos Financieros
 
-#### 🔹 GJR-GARCH
+Los precios suelen ser no estacionarios.
 
-- Efecto apalancamiento
-- Impacto asimétrico de noticias
+Por ello se trabaja con rendimientos.
 
-#### 🔹 EGARCH
+Rendimiento simple.
 
-- Logaritmo de la varianza
-- Asimetría
-- Positividad garantizada
+Log-rendimiento.
 
-#### 🔹 GARCH-M
-
-- Prima de riesgo
-- Relación riesgo-retorno
+Los rendimientos presentan propiedades estadísticas más adecuadas para modelación.
 
 ---
 
-### 📊 Medición de Riesgo
+# XVIII. Teorema de la Heterocedasticidad Condicional
 
-#### Value at Risk (VaR)
+La volatilidad no permanece constante.
 
-- VaR paramétrico
-- VaR dinámico
-- VaR basado en volatilidad condicional
+Los periodos de alta volatilidad suelen ser seguidos por periodos de alta volatilidad.
 
-#### Aplicaciones
-
-- Gestión de portafolios
-- Riesgo de mercado
-- Control de pérdidas
+Este fenómeno se conoce como volatility clustering.
 
 ---
 
-## 🧠 Objetivos del repositorio
+# XIX. Teorema ARCH
 
-- Comprender la teoría de series de tiempo.
-- Identificar procesos estacionarios y no estacionarios.
-- Aplicar modelos ARIMA y SARIMA.
-- Incorporar variables exógenas mediante SARIMAX.
-- Analizar volatilidad financiera.
-- Implementar modelos GARCH y sus extensiones.
-- Evaluar modelos mediante criterios estadísticos.
-- Generar pronósticos económicos y financieros.
-- Aplicar herramientas cuantitativas a datos reales.
+ARCH modela la varianza condicional mediante errores pasados.
+
+La innovación principal de Engle consistió en permitir que la volatilidad evolucionara dinámicamente.
 
 ---
 
-## 🛠️ Tecnologías y Herramientas
+# XX. Teorema GARCH
 
-- Python
-- NumPy
-- Pandas
-- Statsmodels
-- SciPy
-- Matplotlib
-- Seaborn
-- ARCH Package
-- Jupyter Notebook
-- Google Colab
+Bollerslev extendió ARCH incorporando rezagos de la propia varianza.
+
+GARCH(1,1) se convirtió en el estándar de la industria por su capacidad para capturar persistencia con pocos parámetros.
 
 ---
 
-## 📂 Estructura sugerida del repositorio
+# XXI. Teorema de la Asimetría
 
-```text
-series_de_tiempo/
-│
-├── datos/
-│   └── store_sales.csv
-│
-├── notebooks/
-│   ├── exploracion_datos.ipynb
-│   ├── arima_sarima.ipynb
-│   ├── sarimax.ipynb
-│   └── garch.ipynb
-│
-├── reportes/
-│   ├── Reporte_SARIMA.pdf
-│   ├── Informe_ARIMA_SARIMA_AAPL.pdf
-│   └── Proyecto_Final.pdf
-│
-│
-├── documentos/
-│   ├── Proyecto_ST
-│
-└── README.md
-```
+Los mercados reaccionan de manera distinta a buenas y malas noticias.
+
+GJR-GARCH y EGARCH permiten modelar este comportamiento.
+
+Las noticias negativas suelen generar incrementos mayores en volatilidad.
 
 ---
 
-## 📚 Bibliografía
+# XXII. Teorema del Riesgo y Rendimiento
 
-- Box, G. E. P., Jenkins, G. M., Reinsel, G. C., & Ljung, G. M. *Time Series Analysis: Forecasting and Control.*
-- Hamilton, J. D. *Time Series Analysis.*
-- Hyndman, R. J., & Athanasopoulos, G. *Forecasting: Principles and Practice.*
-- Tsay, R. S. *Analysis of Financial Time Series.*
-- Enders, W. *Applied Econometric Time Series.*
+GARCH-M incorpora la volatilidad dentro de la ecuación de media.
+
+Permite estudiar si un mayor riesgo esperado exige una compensación adicional en forma de rendimiento.
 
 ---
 
-## 👩‍🎓 Autor
+# XXIII. Teorema del Value at Risk
 
-**Sofía Escamilla**  
-Licenciatura en Finanzas  
+El VaR representa la pérdida máxima esperada bajo un nivel de confianza determinado.
+
+Con modelos GARCH se obtiene un VaR dinámico que evoluciona conforme cambia la volatilidad.
+
+---
+
+# XXIV. Teorema del Backtesting
+
+Todo modelo de riesgo debe ser validado.
+
+El backtesting compara pérdidas observadas contra pérdidas esperadas.
+
+La validez de un sistema de gestión de riesgo depende de esta etapa.
+
+---
+
+# XXV. Aplicaciones Desarrolladas
+
+Durante el curso se trabajó con:
+
+* Series simuladas
+* Series financieras
+* Ventas
+* Exportaciones
+* Acciones
+* Índices bursátiles
+* Pronósticos
+* Volatilidad
+* Riesgo de mercado
+
+Los ejercicios se implementaron en Python utilizando Pandas, NumPy, Statsmodels, Arch y yfinance.
+
+---
+
+# XXVI. Herramientas Utilizadas
+
+* Python
+* Pandas
+* NumPy
+* Statsmodels
+* Matplotlib
+* Arch Package
+* yfinance
+* Google Colab
+* LaTeX
+* GitHub
+
+---
+
+# XXVII. Bibliografía Fundamental
+
+* Box & Jenkins
+* Hamilton
+* Hyndman & Athanasopoulos
+* Enders
+* Tsay
+* Engle
+* Bollerslev
+
+---
+
+# XXVIII. Autor
+
+**Sofia Escamilla**
+
+Licenciatura en Finanzas
+
+Universidad Panamericana
 
 Curso: Series de Tiempo Aplicadas a Finanzas
+
