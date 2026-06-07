@@ -1,0 +1,552 @@
+
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{teal!70!black},
+    stringstyle=\color{purple!80!black},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    tabsize=4
+}
+
+\title{Informe sobre modelos ARIMA y SARIMA aplicados a una serie financiera real}
+\author{Elaborado con Python y \LaTeX}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    {\Large Entrega universitaria \par}
+    \vspace{1.5cm}
+    {\huge \textbf{Modelos ARIMA y SARIMA} \par}
+    \vspace{0.6cm}
+    {\Large Aplicación a precios históricos de Apple Inc. (AAPL) \par}
+    \vspace{2cm}
+    \includegraphics[width=0.22\textwidth]{ex1_series.png}\\[1cm]
+    {\large Series de tiempo, Python y \LaTeX \par}
+    \vfill
+    {\large Alumna: \rule{7cm}{0.4pt} \par}
+    \vspace{0.5cm}
+    {\large Materia: \rule{7cm}{0.4pt} \par}
+    \vspace{0.5cm}
+    {\large Fecha: \today \par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introducción}
+Los modelos ARIMA y SARIMA son herramientas clásicas de series de tiempo para describir dependencia temporal, remover tendencias mediante diferenciación y producir pronósticos coherentes con la estructura estocástica de una variable. En finanzas, estos modelos se usan para estudiar precios, log-precios, rendimientos, spreads y series agregadas de baja frecuencia.
+
+En este informe se trabaja con una base de datos real de Apple Inc. (AAPL), con observaciones históricas diarias provenientes de un repositorio público que declara como fuente a Yahoo Finance. La estrategia empírica se organiza en tres ejemplos: un ARIMA básico, una comparación de modelos mediante AIC y BIC, y un modelo SARIMA con componente estacional sobre datos mensuales.
+
+\section{Marco teórico breve}
+
+\subsection{Proceso autorregresivo AR(p)}
+Un modelo autorregresivo de orden $p$ supone que la variable actual depende linealmente de sus propios rezagos:
+\[
+y_t = c + \phi_1 y_{t-1} + \phi_2 y_{t-2} + \cdots + \phi_p y_{t-p} + \varepsilon_t,
+\]
+donde $\varepsilon_t$ es ruido blanco con media cero y varianza constante.
+
+Usando el operador rezago $B$, con $By_t = y_{t-1}$, puede escribirse como:
+\[
+\phi(B) y_t = c + \varepsilon_t,
+\qquad
+\phi(B)=1-\phi_1B-\cdots-\phi_pB^p.
+\]
+
+\subsection{Proceso de media móvil MA(q)}
+En un modelo MA(q), la serie depende del choque actual y de choques pasados:
+\[
+y_t = \mu + \varepsilon_t + \theta_1 \varepsilon_{t-1} + \theta_2 \varepsilon_{t-2} + \cdots + \theta_q \varepsilon_{t-q}.
+\]
+Con el operador rezago:
+\[
+y_t = \mu + \theta(B)\varepsilon_t,
+\qquad
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q.
+\]
+
+\subsection{Proceso ARMA(p,q)}
+Cuando una serie es estacionaria, puede combinarse la parte AR y la parte MA:
+\[
+\phi(B)(y_t-\mu)=\theta(B)\varepsilon_t.
+\]
+
+\subsection{Proceso ARIMA(p,d,q)}
+Si la serie no es estacionaria en niveles, se diferencia $d$ veces para volverla estacionaria:
+\[
+\phi(B)(1-B)^d(y_t-\mu)=\theta(B)\varepsilon_t.
+\]
+Aquí:
+\begin{itemize}
+    \item $p$: orden autorregresivo,
+    \item $d$: orden de diferenciación,
+    \item $q$: orden de media móvil.
+\end{itemize}
+
+\subsection{Proceso SARIMA$(p,d,q)(P,D,Q)_s$}
+Cuando además existe un patrón estacional de longitud $s$, el modelo se amplía a:
+\[
+\Phi(B^s)\phi(B)(1-B)^d(1-B^s)^D y_t
+=
+\Theta(B^s)\theta(B)\varepsilon_t.
+\]
+Los parámetros estacionales son:
+\begin{itemize}
+    \item $P$: orden AR estacional,
+    \item $D$: diferenciación estacional,
+    \item $Q$: orden MA estacional,
+    \item $s$: periodicidad estacional (por ejemplo, $s=12$ para datos mensuales con estacionalidad anual).
+\end{itemize}
+
+\subsection{ACF y PACF}
+La función de autocorrelación (ACF) mide la correlación entre una serie y sus rezagos:
+\[
+\rho_k = \frac{\operatorname{Cov}(y_t,y_{t-k})}{\sqrt{\operatorname{Var}(y_t)\operatorname{Var}(y_{t-k})}}.
+\]
+La ACF es útil para detectar persistencia, posibles órdenes MA y señales de no estacionariedad.
+
+La función de autocorrelación parcial (PACF) mide la correlación entre $y_t$ y $y_{t-k}$ descontando el efecto de los rezagos intermedios. Se usa para identificar posibles órdenes AR. Como regla práctica:
+\begin{itemize}
+    \item en un AR(p), la PACF suele ``cortarse'' después de $p$ rezagos;
+    \item en un MA(q), la ACF suele ``cortarse'' después de $q$ rezagos;
+    \item en un ARMA, tanto ACF como PACF tienden a decaer gradualmente.
+\end{itemize}
+
+\subsection{AIC y BIC}
+Para comparar modelos se usan criterios de información que penalizan complejidad:
+\[
+AIC = -2\ln(\hat L) + 2k,
+\]
+\[
+BIC = -2\ln(\hat L) + k\ln(n),
+\]
+donde $\hat L$ es la verosimilitud maximizada, $k$ es el número de parámetros estimados y $n$ el tamaño de muestra.
+
+Cuanto menor sea AIC o BIC, mejor es el balance entre ajuste y parsimonia. BIC penaliza más fuerte la complejidad, por lo que suele preferir modelos más simples.
+
+\subsection{Estacionariedad}
+Una serie estacionaria presenta media, varianza y estructura de autocovarianzas aproximadamente constantes en el tiempo. Los precios financieros suelen ser no estacionarios, mientras que sus primeras diferencias o log-rendimientos suelen aproximarse más a la estacionariedad. En la práctica, revisar gráficos, ACF/PACF y pruebas como Dickey-Fuller aumentada ayuda a decidir el orden de diferenciación.
+
+\section{Base de datos}
+Se utilizó la serie histórica de precios de cierre de Apple Inc. (ticker AAPL), en frecuencia diaria. El archivo cubre desde diciembre de 1980 hasta noviembre de 2024 y contiene las variables Date, Open, High, Low, Close y Volume. El repositorio utilizado declara explícitamente que la fuente original es Yahoo Finance. Para los ejemplos diarios se empleó el subperiodo 2015--2024; para el ejemplo estacional se construyó una serie mensual a partir del precio de cierre de fin de mes entre 2005 y 2024.
+
+\textbf{Fuente}: repositorio público en GitHub con datos de AAPL y referencia a Yahoo Finance.\\
+\textbf{Periodo bruto}: 1980-12-12 a 2024-11-29.\\
+\textbf{Frecuencia}: diaria; en el tercer ejemplo se re-muestreó a frecuencia mensual.
+
+\section{Metodología general}
+En los ejemplos se trabajó con el logaritmo del precio de cierre:
+\[
+x_t = \log(P_t),
+\]
+porque el logaritmo suaviza la escala y vuelve más interpretable la dinámica relativa del precio. Después se estudió si la serie requería diferenciación. Los últimos 60 días hábiles se reservaron como horizonte de prueba en los ejemplos diarios, y los últimos 12 meses en el ejemplo estacional.
+
+\section{Ejemplo 1: modelo ARIMA básico}
+\subsection{Objetivo}
+Ajustar un modelo ARIMA básico a la serie diaria de log-precios de AAPL y evaluar su capacidad de pronóstico a corto plazo.
+
+\subsection{Serie y estacionariedad}
+En niveles, la serie logarítmica presenta clara tendencia y persistencia. La prueba ADF sobre la serie en niveles arrojó un valor-$p$ de 0.9451, por lo que no se rechaza la hipótesis de raíz unitaria. Tras una primera diferencia, el valor-$p$ cae a 0, consistente con estacionariedad. Por ello se adopta $d=1$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ex1_series.png}
+    \caption{Serie de entrenamiento en logaritmos y su primera diferencia.}
+\end{figure}
+
+\subsection{Identificación mediante ACF y PACF}
+En la serie diferenciada la ACF y la PACF muestran dependencia corta, sin estacionalidad marcada a frecuencia diaria. Un patrón razonable es probar un modelo ARIMA(1,1,1), donde:
+\begin{itemize}
+    \item $p=1$ captura persistencia de corto plazo en la serie diferenciada;
+    \item $d=1$ elimina la tendencia estocástica;
+    \item $q=1$ captura el efecto de un choque reciente.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex1_acf_pacf.png}
+    \caption{ACF y PACF de la serie diaria diferenciada.}
+\end{figure}
+
+\subsection{Modelo estimado}
+El modelo ajustado fue ARIMA(1,1,1), con:
+\[
+AIC = -13241.46,
+\qquad
+BIC = -13223.96.
+\]
+
+\subsection{Diagnóstico de residuos}
+Los residuos oscilan alrededor de cero y no muestran autocorrelación remanente importante. La prueba Ljung--Box a 12 rezagos reportó un valor-$p$ de 1.0000, lo que sugiere que no queda dependencia serial relevante.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex1_residuals.png}
+    \caption{Residuos del modelo ARIMA(1,1,1) y su ACF.}
+\end{figure}
+
+\subsection{Pronóstico e interpretación}
+El pronóstico a 60 días hábiles sigue la trayectoria reciente de la serie, con bandas de confianza que se amplían conforme aumenta el horizonte. En precios financieros esto es esperado: la incertidumbre acumulada crece rápidamente. El modelo es útil como referencia estadística de corto plazo, aunque no incorpora información fundamental ni eventos de mercado.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex1_forecast.png}
+    \caption{Pronóstico del modelo ARIMA(1,1,1) sobre el conjunto de prueba.}
+\end{figure}
+
+\subsection{Código completo en Python}
+\begin{lstlisting}[style=pythonstyle,caption={Ejemplo 1: ARIMA básico}]
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+df = pd.read_csv("aapl_yahoo_1980_2024.csv")
+df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert(None)
+df = df.set_index("Date").sort_index()
+
+serie = df.loc["2015-01-01":"2024-11-29", "Close"].asfreq("B").ffill()
+log_serie = np.log(serie)
+
+train = log_serie.iloc[:-60]
+test = log_serie.iloc[-60:]
+
+print("ADF niveles:", adfuller(train.dropna(), autolag="AIC")[1])
+print("ADF primera diferencia:", adfuller(train.diff().dropna(), autolag="AIC")[1])
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+ax[0].plot(train)
+ax[1].plot(train.diff().dropna())
+plt.show()
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+plot_acf(train.diff().dropna(), lags=30, ax=ax[0])
+plot_pacf(train.diff().dropna(), lags=30, method="ywm", ax=ax[1])
+plt.show()
+
+modelo = ARIMA(train, order=(1, 1, 1))
+resultado = modelo.fit()
+print(resultado.summary())
+print("AIC:", resultado.aic)
+print("BIC:", resultado.bic)
+
+residuos = pd.Series(resultado.resid, index=train.index).dropna()
+print(acorr_ljungbox(residuos, lags=[12], return_df=True))
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+ax[0].plot(residuos)
+plot_acf(residuos, lags=30, ax=ax[1])
+plt.show()
+
+forecast = resultado.get_forecast(steps=len(test))
+pred = forecast.predicted_mean
+ic = forecast.conf_int()
+
+plt.figure(figsize=(9, 4.8))
+plt.plot(train.iloc[-250:], label="Entrenamiento")
+plt.plot(test, label="Real")
+plt.plot(pred, label="Pronóstico")
+plt.fill_between(test.index, ic.iloc[:, 0], ic.iloc[:, 1], alpha=0.2)
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+\end{lstlisting}
+
+\section{Ejemplo 2: comparación de modelos con AIC y BIC}
+\subsection{Objetivo}
+Comparar varios modelos ARIMA sobre la misma serie para seleccionar una especificación parsimoniosa mediante AIC y BIC.
+
+\subsection{Identificación inicial}
+La serie diaria vuelve a diferenciarse una vez. A partir de la ACF y la PACF, se consideran combinaciones con $p,q \in \{0,1,2,3\}$ y $d=1$ fijo. Esto permite contrastar modelos desde caminata aleatoria ARIMA(0,1,0) hasta especificaciones más flexibles.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex2_acf_pacf.png}
+    \caption{ACF y PACF de la serie diferenciada usada en la comparación de modelos.}
+\end{figure}
+
+\subsection{Selección con AIC y BIC}
+Los cinco mejores modelos por AIC fueron los siguientes:
+
+\begin{table}[H]
+\centering
+\caption{Top 5 modelos ARIMA según AIC}
+\begin{tabular}{lrr}
+\toprule
+Modelo & AIC & BIC \\
+\midrule
+ARIMA(0,1,0) & -13245.46 & -13239.63 \\
+ARIMA(1,1,0) & -13243.69 & -13232.03 \\
+ARIMA(0,1,1) & -13243.69 & -13232.02 \\
+ARIMA(2,1,0) & -13242.19 & -13224.69 \\
+ARIMA(0,1,2) & -13242.16 & -13224.66 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El mejor modelo por AIC y BIC fue \textbf{ARIMA(0,1,0)}, con:
+\[
+AIC = -13245.46,
+\qquad
+BIC = -13239.63.
+\]
+
+Este resultado es importante: en precios financieros, una caminata aleatoria suele competir muy bien frente a modelos más complejos. En términos económicos, significa que la mejor predicción puntual del siguiente valor es esencialmente el valor actual más un error impredecible.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{ex2_aic_bic.png}
+    \caption{Mapa de calor de AIC y BIC para modelos ARIMA$(p,1,q)$.}
+\end{figure}
+
+\subsection{Diagnóstico de residuos}
+El ARIMA(0,1,0) produce residuos compatibles con una innovación sin autocorrelación importante; la prueba Ljung--Box a 12 rezagos reportó un valor-$p$ de 1.0000. Esto refuerza la idea de que añadir más parámetros no mejora sustancialmente el ajuste.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex2_residuals.png}
+    \caption{Residuos del modelo seleccionado por AIC/BIC.}
+\end{figure}
+
+\subsection{Pronóstico e interpretación}
+El pronóstico del ARIMA(0,1,0) es prácticamente horizontal en términos del último nivel observado en log-precios. Esto es consistente con la intuición de una caminata aleatoria: no hay patrón sistemático aprovechable en la media condicional, y la principal dinámica es la acumulación de choques.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex2_forecast.png}
+    \caption{Pronóstico del modelo ARIMA(0,1,0) seleccionado por criterios de información.}
+\end{figure}
+
+\subsection{Código completo en Python}
+\begin{lstlisting}[style=pythonstyle,caption={Ejemplo 2: comparación de modelos con AIC y BIC}]
+import itertools
+import warnings
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+warnings.filterwarnings("ignore")
+
+df = pd.read_csv("aapl_yahoo_1980_2024.csv")
+df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert(None)
+df = df.set_index("Date").sort_index()
+
+serie = df.loc["2015-01-01":"2024-11-29", "Close"].asfreq("B").ffill()
+log_serie = np.log(serie)
+train = log_serie.iloc[:-60]
+test = log_serie.iloc[-60:]
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+plot_acf(train.diff().dropna(), lags=30, ax=ax[0])
+plot_pacf(train.diff().dropna(), lags=30, method="ywm", ax=ax[1])
+plt.show()
+
+resultados = []
+for p, q in itertools.product(range(4), range(4)):
+    try:
+        fit = ARIMA(train, order=(p, 1, q)).fit()
+        resultados.append([p, q, fit.aic, fit.bic])
+    except Exception:
+        resultados.append([p, q, np.nan, np.nan])
+
+tabla = pd.DataFrame(resultados, columns=["p", "q", "AIC", "BIC"])
+print(tabla.sort_values("AIC").head())
+
+mejor = tabla.sort_values("AIC").iloc[0]
+orden = (int(mejor["p"]), 1, int(mejor["q"]))
+print("Mejor modelo:", orden)
+
+modelo = ARIMA(train, order=orden)
+resultado = modelo.fit()
+print(resultado.summary())
+print("AIC:", resultado.aic, "BIC:", resultado.bic)
+
+residuos = pd.Series(resultado.resid, index=train.index).dropna()
+print(acorr_ljungbox(residuos, lags=[12], return_df=True))
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+ax[0].plot(residuos)
+plot_acf(residuos, lags=30, ax=ax[1])
+plt.show()
+
+forecast = resultado.get_forecast(steps=len(test))
+pred = forecast.predicted_mean
+ic = forecast.conf_int()
+
+plt.figure(figsize=(9, 4.8))
+plt.plot(train.iloc[-250:], label="Entrenamiento")
+plt.plot(test, label="Real")
+plt.plot(pred, label=f"Pronóstico ARIMA{orden}")
+plt.fill_between(test.index, ic.iloc[:, 0], ic.iloc[:, 1], alpha=0.2)
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+\end{lstlisting}
+
+\section{Ejemplo 3: modelo SARIMA con componente estacional}
+\subsection{Objetivo}
+Modelar una versión mensual de la serie de AAPL para capturar dependencia estacional anual mediante un modelo SARIMA.
+
+\subsection{Construcción de la serie}
+A partir del precio diario de cierre se construyó una serie mensual tomando el último cierre de cada mes entre 2005 y 2024. Se trabajó con el logaritmo del precio mensual. La frecuencia mensual permite evaluar una estacionalidad con periodo $s=12$.
+
+\subsection{Estacionariedad y elección de parámetros}
+La serie mensual en niveles no es estacionaria (ADF con valor-$p$ = 0.7215). Después de aplicar una diferencia regular y una estacional, el valor-$p$ cae a 1.759e-11, por lo que se justifica usar $d=1$ y $D=1$.
+
+La inspección de ACF y PACF de la serie transformada mostró:
+\begin{itemize}
+    \item persistencia no estacional de corto plazo, lo que apoya incluir términos AR y MA bajos;
+    \item señal estacional anual, reflejada en rezagos múltiplos de 12.
+\end{itemize}
+Tras comparar varias combinaciones, el mejor desempeño se obtuvo con:
+\[
+\text{SARIMA}(1,1,1)(0,1,1)_{12}.
+\]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ex3_series.png}
+    \caption{Serie mensual logarítmica y transformación estacionalmente diferenciada.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex3_acf_pacf.png}
+    \caption{ACF y PACF de la serie mensual diferenciada regular y estacionalmente.}
+\end{figure}
+
+\subsection{Modelo estimado}
+El modelo SARIMA seleccionado produjo:
+\[
+AIC = -362.73,
+\qquad
+BIC = -349.54.
+\]
+
+\subsection{Diagnóstico de residuos}
+Los residuos no presentan un patrón sistemático evidente. La prueba Ljung--Box a 12 rezagos arrojó un valor-$p$ de 0.7773, compatible con residuos cercanos a ruido blanco.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex3_residuals.png}
+    \caption{Residuos del SARIMA$(1,1,1)(0,1,1)_{12}$ y su ACF.}
+\end{figure}
+
+\subsection{Pronóstico e interpretación}
+El pronóstico a 12 meses sintetiza la tendencia reciente con una corrección estacional anual. En la práctica, esto significa que el modelo reconoce tanto el componente integrado del precio como posibles regularidades mensuales. Sin embargo, en series financieras la estacionalidad suele ser más débil que en series macroeconómicas o de demanda; por ello este ejemplo debe entenderse como una ilustración metodológica válida, más que como un sistema definitivo de trading.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ex3_forecast.png}
+    \caption{Pronóstico del modelo SARIMA sobre los últimos 12 meses.}
+\end{figure}
+
+\subsection{Código completo en Python}
+\begin{lstlisting}[style=pythonstyle,caption={Ejemplo 3: SARIMA con componente estacional}]
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+df = pd.read_csv("aapl_yahoo_1980_2024.csv")
+df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert(None)
+df = df.set_index("Date").sort_index()
+
+mensual = df["Close"].resample("M").last().loc["2005-01-31":"2024-11-30"]
+log_mensual = np.log(mensual)
+
+train = log_mensual.iloc[:-12]
+test = log_mensual.iloc[-12:]
+
+print("ADF niveles:", adfuller(train.dropna(), autolag="AIC")[1])
+print("ADF diff + seas diff:", adfuller(train.diff().diff(12).dropna(), autolag="AIC")[1])
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+ax[0].plot(train)
+ax[1].plot(train.diff().diff(12).dropna())
+plt.show()
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+plot_acf(train.diff().diff(12).dropna(), lags=36, ax=ax[0])
+plot_pacf(train.diff().diff(12).dropna(), lags=36, method="ywm", ax=ax[1])
+plt.show()
+
+modelo = SARIMAX(
+    train,
+    order=(1, 1, 1),
+    seasonal_order=(0, 1, 1, 12),
+    enforce_stationarity=False,
+    enforce_invertibility=False
+)
+resultado = modelo.fit(disp=False)
+print(resultado.summary())
+print("AIC:", resultado.aic)
+print("BIC:", resultado.bic)
+
+residuos = pd.Series(resultado.resid, index=train.index).dropna()
+print(acorr_ljungbox(residuos, lags=[12], return_df=True))
+
+fig, ax = plt.subplots(2, 1, figsize=(9, 6))
+ax[0].plot(residuos)
+plot_acf(residuos, lags=36, ax=ax[1])
+plt.show()
+
+forecast = resultado.get_forecast(steps=len(test))
+pred = forecast.predicted_mean
+ic = forecast.conf_int()
+
+plt.figure(figsize=(9, 4.8))
+plt.plot(train.iloc[-60:], label="Entrenamiento")
+plt.plot(test, label="Real")
+plt.plot(pred, label="Pronóstico SARIMA")
+plt.fill_between(test.index, ic.iloc[:, 0], ic.iloc[:, 1], alpha=0.2)
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+\end{lstlisting}
+
+\section{Conclusiones}
+Los ejercicios dejan cuatro ideas principales.
+
+Primero, los precios financieros en niveles suelen ser no estacionarios; por eso la diferenciación es una etapa central en ARIMA. Segundo, la identificación visual mediante ACF y PACF ayuda a proponer órdenes iniciales, pero no sustituye la comparación formal con AIC y BIC. Tercero, en series financieras diarias es frecuente que un modelo muy simple, incluso una caminata aleatoria, compita o supere a alternativas más complejas. Cuarto, los modelos SARIMA son útiles cuando la frecuencia de los datos permite explorar patrones estacionales explícitos, como en series mensuales.
+
+En consecuencia, ARIMA y SARIMA son herramientas sólidas para análisis académico y para construir líneas base de pronóstico. No obstante, en aplicaciones financieras reales conviene complementarlos con modelos de volatilidad, variables exógenas y validación fuera de muestra más exigente.
+
+\appendix
+\section{Archivo de datos}
+El informe se acompaña del archivo \texttt{aapl\_yahoo\_1980\_2024.csv}, que contiene la base de datos utilizada.
+
+\end{document}
