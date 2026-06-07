@@ -1,0 +1,918 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% =====================================================
+% PAQUETES
+% =====================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.8cm,bottom=2.8cm}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=black}
+
+% =====================================================
+% COLORES Y ESTILO
+% =====================================================
+\definecolor{azulUP}{RGB}{0,70,127}
+\definecolor{grisClaro}{RGB}{245,247,250}
+\definecolor{verde}{RGB}{0,120,80}
+\definecolor{morado}{RGB}{85,50,140}
+\definecolor{rojo}{RGB}{160,45,45}
+
+\titleformat{\section}{\Large\bfseries\color{azulUP}}{\thesection}{0.8em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{azulUP}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{azulUP}}{\thesubsubsection}{0.8em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Series de Tiempo}
+\rhead{Sofia Escamilla}
+\cfoot{\thepage}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{markdowncell}[1][]{
+  colback=grisClaro,
+  colframe=azulUP,
+  title=\textbf{Celda Markdown},
+  fonttitle=\bfseries\color{white},
+  colbacktitle=azulUP,
+  breakable,
+  #1
+}
+\newtcolorbox{latexcell}[1][]{
+  colback=white,
+  colframe=morado,
+  title=\textbf{Celda LaTeX / Desarrollo matemático},
+  fonttitle=\bfseries\color{white},
+  colbacktitle=morado,
+  breakable,
+  #1
+}
+\newtcolorbox{interpretacion}[1][]{
+  colback=verde!6,
+  colframe=verde,
+  title=\textbf{Interpretación financiera / estadística},
+  fonttitle=\bfseries\color{white},
+  colbacktitle=verde,
+  breakable,
+  #1
+}
+\newtcolorbox{alerta}[1][]{
+  colback=rojo!5,
+  colframe=rojo,
+  title=\textbf{Nota importante},
+  fonttitle=\bfseries\color{white},
+  colbacktitle=rojo,
+  breakable,
+  #1
+}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{azulUP}\bfseries,
+    commentstyle=\color{verde!70!black},
+    stringstyle=\color{morado},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    framerule=0.3pt,
+    rulecolor=\color{azulUP!50},
+    backgroundcolor=\color{grisClaro},
+    tabsize=4,
+    columns=fullflexible
+}
+\lstdefinestyle{textstyle}{
+    basicstyle=\ttfamily\small,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{grisClaro}
+}
+
+\newcommand{\codecell}[1]{
+\begin{center}
+\textbf{Celda de código Python}
+\end{center}
+\begin{lstlisting}[style=pythonstyle]
+#1
+\end{lstlisting}
+}
+
+% =====================================================
+% DOCUMENTO
+% =====================================================
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Large Universidad Panamericana \par}
+    \vspace{0.5cm}
+    {\large Licenciatura en Finanzas \par}
+    \vspace{2cm}
+    {\Huge\bfseries Notebook Documentado de Series de Tiempo \par}
+    \vspace{0.5cm}
+    {\Large ARIMA, SARIMA, SARIMAX, ACF, PACF, GARCH y Aplicaciones en Python \par}
+    \vspace{2cm}
+    {\Large \textbf{Sofia Escamilla} \par}
+    \vfill
+    {\large Documento elaborado en formato \LaTeX{} con estructura de notebook para Google Colab \par}
+    {\large \today \par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =====================================================
+\section{Objetivo del notebook}
+
+\begin{markdowncell}
+Este documento integra y documenta los materiales de \textbf{Series de Tiempo} enviados para el proyecto. 
+El objetivo es convertir los documentos teóricos, ejercicios, reportes y base de datos en un notebook ordenado, con celdas tipo Markdown, código Python y desarrollo matemático en \LaTeX.
+
+El notebook está diseñado para ser llevado a \textbf{Google Colab}. Por eso se incluyen bloques de instalación, carga de archivos, limpieza de datos, visualización, pruebas de estacionariedad, identificación con ACF/PACF, estimación ARIMA/SARIMA/SARIMAX y extensiones hacia volatilidad financiera mediante ARCH/GARCH.
+\end{markdowncell}
+
+\subsection{Archivos fuente integrados}
+
+\begin{longtable}{p{5cm}p{9cm}}
+\toprule
+\textbf{Archivo} & \textbf{Uso dentro del notebook} \\
+\midrule
+\endhead
+\texttt{DATABASE\_STORE\_SALES.csv} & Base de datos principal para análisis de ventas por tienda, promoción y días festivos. \\
+\texttt{README(1).md} & Estructura conceptual del repositorio de Series de Tiempo. \\
+\texttt{Proyecto\_ST.tex} y \texttt{Proyecto\_ST.pdf} & Marco teórico y ejercicios de SARIMAX, GARCH, EGARCH, GJR-GARCH, GARCH-M y VaR. \\
+\texttt{Reporte\_Sarima.pdf} & Documento teórico de ARIMA, SARIMA, SARIMAX, ACF, PACF, AIC, BIC, Ljung-Box y metodología Box-Jenkins. \\
+\texttt{arima\_sarima\_aapl.tex} & Informe aplicado de modelos ARIMA y SARIMA sobre una serie financiera real. \\
+\texttt{Preguntas\_pyhton.pdf} & Ejercicios prácticos en Python sobre descarga de datos, series mensuales, ACF, PACF, tendencia y estacionalidad. \\
+\bottomrule
+\end{longtable}
+
+% =====================================================
+\section{Estructura recomendada del repositorio}
+
+\begin{markdowncell}
+La estructura sugerida del repositorio permite separar datos, notebooks, reportes y documentos fuente. Esta organización facilita subir el proyecto a GitHub y trabajar desde Colab sin mezclar archivos de otras materias.
+\end{markdowncell}
+
+\begin{lstlisting}[style=textstyle]
+series_de_tiempo/
+|
+├── datos/
+│   └── DATABASE_STORE_SALES.csv
+|
+├── notebooks/
+│   └── notebook_series_tiempo_sofia_escamilla.ipynb
+|
+├── reportes/
+│   ├── Reporte_Sarima.pdf
+│   ├── Proyecto_ST.pdf
+│   └── arima_sarima_aapl.pdf
+|
+├── documentos/
+│   ├── Proyecto_ST.tex
+│   ├── arima_sarima_aapl.tex
+│   └── Preguntas_pyhton.pdf
+|
+├── README.md
+└── notebook_series_tiempo_sofia_escamilla.tex
+\end{lstlisting}
+
+% =====================================================
+\section{Preparación del ambiente en Google Colab}
+
+\begin{markdowncell}
+La primera parte del notebook debe preparar las librerías necesarias. Para Series de Tiempo se requieren principalmente \texttt{pandas}, \texttt{numpy}, \texttt{matplotlib}, \texttt{statsmodels} y, para volatilidad financiera, el paquete \texttt{arch}.
+\end{markdowncell}
+
+\begin{lstlisting}[style=pythonstyle]
+# ==========================================
+# 1. Instalación de librerías
+# ==========================================
+!pip install yfinance arch statsmodels --quiet
+
+# ==========================================
+# 2. Importación de paquetes
+# ==========================================
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+import warnings
+warnings.filterwarnings("ignore")
+\end{lstlisting}
+
+\begin{markdowncell}
+En Colab, la base de datos puede cargarse manualmente desde el panel lateral o con \texttt{files.upload()}. Para mantener el notebook reproducible, se recomienda conservar el nombre del archivo como \texttt{DATABASE\_STORE\_SALES.csv}.
+\end{markdowncell}
+
+\begin{lstlisting}[style=pythonstyle]
+from google.colab import files
+
+# Ejecutar esta celda si el archivo no está cargado en el entorno
+# uploaded = files.upload()
+
+df = pd.read_csv("DATABASE_STORE_SALES.csv")
+df.head()
+\end{lstlisting}
+
+% =====================================================
+\section{Descripción de la base de datos}
+
+\begin{markdowncell}
+La base \texttt{DATABASE\_STORE\_SALES.csv} contiene observaciones diarias de ventas por tienda. Las columnas principales son: fecha, tienda, ventas, indicador de promoción e indicador de día festivo.
+\end{markdowncell}
+
+\begin{longtable}{p{5cm}p{8cm}}
+\toprule
+\textbf{Métrica} & \textbf{Valor observado} \\
+\midrule
+\endhead
+Número de filas & 7,300 \\
+Número de columnas & 5 \\
+Columnas & \texttt{date, store, sales, promo, holiday} \\
+Número de tiendas & 10 \\
+Fecha inicial & 2022-01-01 \\
+Fecha final & 2023-12-31 \\
+Venta promedio & 228.43 \\
+Venta mínima & 160.71 \\
+Venta máxima & 340.73 \\
+Proporción de días con promoción & 20.22% \\
+Proporción de días festivos & 10.41% \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[style=pythonstyle]
+# Conversión de fecha
+df["date"] = pd.to_datetime(df["date"])
+
+# Validación básica
+print(df.info())
+print(df.describe())
+
+# Conteo por tienda
+df.groupby("store")["sales"].agg(["count", "mean", "std", "min", "max"])
+\end{lstlisting}
+
+\begin{interpretacion}
+La base permite trabajar con una estructura de panel: hay varias tiendas observadas durante el tiempo. Para un análisis de series de tiempo puro, se puede agregar la información por fecha para construir una serie total diaria de ventas. También se puede analizar cada tienda por separado.
+\end{interpretacion}
+
+% =====================================================
+\section{Fundamentos de Series de Tiempo}
+
+\subsection{Definición}
+
+\begin{markdowncell}
+Una serie de tiempo es una secuencia de observaciones ordenadas cronológicamente. En finanzas y economía, las series de tiempo se utilizan para analizar precios, ventas, inflación, tasas de interés, tipo de cambio, exportaciones, producción industrial y volatilidad.
+\end{markdowncell}
+
+\begin{latexcell}
+Una serie temporal se puede representar como:
+\[
+\{y_t\}_{t=1}^{T}
+\]
+donde \(y_t\) es el valor observado de la variable en el periodo \(t\), y \(T\) es el número total de observaciones.
+\end{latexcell}
+
+\subsection{Componentes}
+
+\begin{latexcell}
+De manera general, una serie puede descomponerse como:
+\[
+y_t = T_t + S_t + C_t + \varepsilon_t
+\]
+donde:
+\begin{itemize}
+    \item \(T_t\): tendencia.
+    \item \(S_t\): componente estacional.
+    \item \(C_t\): ciclo.
+    \item \(\varepsilon_t\): ruido o componente irregular.
+\end{itemize}
+\end{latexcell}
+
+\begin{interpretacion}
+Si una serie presenta tendencia o estacionalidad, generalmente no es estacionaria. En ese caso, antes de ajustar modelos ARIMA o SARIMA se requiere aplicar transformaciones como logaritmos, diferencias regulares o diferencias estacionales.
+\end{interpretacion}
+
+% =====================================================
+\section{Estacionariedad}
+
+\begin{markdowncell}
+La estacionariedad es una condición central en la modelación de series de tiempo. Un proceso estacionario en sentido débil mantiene media, varianza y autocovarianza constantes en el tiempo.
+\end{markdowncell}
+
+\begin{latexcell}
+Un proceso \(\{y_t\}\) es débilmente estacionario si cumple:
+\[
+E(y_t)=\mu
+\]
+\[
+Var(y_t)=\sigma^2
+\]
+\[
+Cov(y_t,y_{t-k})=\gamma_k
+\]
+para todo \(t\), donde la autocovarianza depende únicamente del rezago \(k\), no del momento específico \(t\).
+\end{latexcell}
+
+\subsection{Prueba ADF}
+
+\begin{markdowncell}
+La prueba Augmented Dickey-Fuller (ADF) evalúa si una serie tiene raíz unitaria. La hipótesis nula es que la serie no es estacionaria.
+\end{markdowncell}
+
+\begin{latexcell}
+La hipótesis de la prueba ADF es:
+\[
+H_0: \text{la serie tiene raíz unitaria}
+\]
+\[
+H_1: \text{la serie es estacionaria}
+\]
+Si el \textit{p-value} es menor a 0.05, se rechaza \(H_0\) y se concluye que la serie es estacionaria.
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Serie total de ventas por fecha
+serie_diaria = df.groupby("date")["sales"].sum().asfreq("D")
+
+# Prueba ADF
+resultado_adf = adfuller(serie_diaria.dropna())
+
+print("Estadístico ADF:", resultado_adf[0])
+print("p-value:", resultado_adf[1])
+print("Valores críticos:", resultado_adf[4])
+\end{lstlisting}
+
+% =====================================================
+\section{ACF y PACF}
+
+\begin{markdowncell}
+La función de autocorrelación (ACF) mide la correlación entre una serie y sus rezagos. La función de autocorrelación parcial (PACF) mide la relación directa entre \(y_t\) y \(y_{t-k}\), eliminando el efecto de los rezagos intermedios.
+\end{markdowncell}
+
+\begin{latexcell}
+La autocorrelación de orden \(k\) se define como:
+\[
+\rho_k = \frac{Cov(y_t,y_{t-k})}{Var(y_t)} = \frac{\gamma_k}{\gamma_0}
+\]
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+plot_acf(serie_diaria.dropna(), lags=40, ax=axes[0])
+axes[0].set_title("ACF de ventas diarias")
+
+plot_pacf(serie_diaria.dropna(), lags=40, ax=axes[1], method="ywm")
+axes[1].set_title("PACF de ventas diarias")
+
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+\begin{interpretacion}
+En los documentos de teoría se utiliza la ACF para identificar componentes de media móvil \(MA(q)\) y la PACF para identificar componentes autorregresivos \(AR(p)\). Si hay picos en rezagos estacionales, por ejemplo 7 en series diarias o 12 en series mensuales, puede existir un patrón estacional.
+\end{interpretacion}
+
+% =====================================================
+\section{Modelos AR, MA, ARMA y ARIMA}
+
+\subsection{Modelo AR(p)}
+
+\begin{latexcell}
+Un modelo autorregresivo de orden \(p\), AR(\(p\)), se escribe como:
+\[
+y_t = c + \phi_1 y_{t-1} + \phi_2 y_{t-2} + \cdots + \phi_p y_{t-p} + \varepsilon_t
+\]
+donde \(\varepsilon_t\) es ruido blanco.
+\end{latexcell}
+
+\subsection{Modelo MA(q)}
+
+\begin{latexcell}
+Un modelo de media móvil de orden \(q\), MA(\(q\)), se define como:
+\[
+y_t = \mu + \varepsilon_t + \theta_1 \varepsilon_{t-1} + \theta_2 \varepsilon_{t-2} + \cdots + \theta_q \varepsilon_{t-q}
+\]
+\end{latexcell}
+
+\subsection{Modelo ARIMA(p,d,q)}
+
+\begin{latexcell}
+El modelo ARIMA combina autorregresión, diferenciación e innovación de media móvil:
+\[
+\phi_p(B)(1-B)^d y_t = c + \theta_q(B)\varepsilon_t
+\]
+donde:
+\[
+\phi_p(B)=1-\phi_1B-\cdots-\phi_pB^p
+\]
+\[
+\theta_q(B)=1+\theta_1B+\cdots+\theta_qB^q
+\]
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Ejemplo: ajuste ARIMA sobre la serie agregada diaria
+modelo_arima = ARIMA(serie_diaria.dropna(), order=(1, 1, 1))
+resultado_arima = modelo_arima.fit()
+
+print(resultado_arima.summary())
+\end{lstlisting}
+
+\begin{interpretacion}
+El parámetro \(d\) representa el número de diferencias necesarias para volver estacionaria la serie. Si la serie tiene tendencia, suele requerirse \(d=1\). Si ya es estacionaria, puede trabajarse con \(d=0\).
+\end{interpretacion}
+
+% =====================================================
+\section{Modelo SARIMA}
+
+\begin{markdowncell}
+El modelo SARIMA extiende ARIMA al incorporar componentes estacionales. Es apropiado cuando la serie tiene patrones que se repiten cada cierto número de periodos, por ejemplo 12 meses en datos mensuales o 7 días en datos diarios.
+\end{markdowncell}
+
+\begin{latexcell}
+La notación general es:
+\[
+SARIMA(p,d,q)(P,D,Q)_s
+\]
+donde:
+\begin{itemize}
+    \item \(p,d,q\): componentes no estacionales.
+    \item \(P,D,Q\): componentes estacionales.
+    \item \(s\): longitud del ciclo estacional.
+\end{itemize}
+\end{latexcell}
+
+\begin{latexcell}
+La formulación con operadores de rezago es:
+\[
+\Phi_P(B^s)\phi_p(B)(1-B)^d(1-B^s)^D y_t =
+\Theta_Q(B^s)\theta_q(B)\varepsilon_t
+\]
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Ejemplo SARIMA para datos diarios con posible estacionalidad semanal
+modelo_sarima = SARIMAX(
+    serie_diaria.dropna(),
+    order=(1, 1, 1),
+    seasonal_order=(1, 0, 1, 7),
+    enforce_stationarity=False,
+    enforce_invertibility=False
+)
+
+resultado_sarima = modelo_sarima.fit(disp=False)
+print(resultado_sarima.summary())
+\end{lstlisting}
+
+% =====================================================
+\section{Modelo SARIMAX}
+
+\begin{markdowncell}
+SARIMAX incorpora variables exógenas. En la base de ventas, las variables \texttt{promo} y \texttt{holiday} pueden utilizarse como regresores externos para explicar cambios en ventas.
+\end{markdowncell}
+
+\begin{latexcell}
+El modelo SARIMAX puede escribirse como:
+\[
+\Phi_P(B^s)\phi_p(B)(1-B)^d(1-B^s)^D y_t =
+\beta^\top X_t + \Theta_Q(B^s)\theta_q(B)\varepsilon_t
+\]
+donde \(X_t\) representa el vector de variables exógenas.
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Construcción de serie agregada y variables exógenas
+df_diario = df.groupby("date").agg({
+    "sales": "sum",
+    "promo": "mean",
+    "holiday": "max"
+}).asfreq("D")
+
+y = df_diario["sales"]
+X = df_diario[["promo", "holiday"]]
+
+modelo_sarimax = SARIMAX(
+    y,
+    exog=X,
+    order=(1, 1, 1),
+    seasonal_order=(1, 0, 1, 7),
+    enforce_stationarity=False,
+    enforce_invertibility=False
+)
+
+resultado_sarimax = modelo_sarimax.fit(disp=False)
+print(resultado_sarimax.summary())
+\end{lstlisting}
+
+\begin{interpretacion}
+En este contexto, un coeficiente positivo de \texttt{promo} indicaría que los días con promoción se asocian con mayores ventas, manteniendo constante la dinámica temporal de la serie. Un coeficiente positivo de \texttt{holiday} sugeriría que los días festivos incrementan las ventas.
+\end{interpretacion}
+
+% =====================================================
+\section{Criterios de selección: AIC, BIC y log-verosimilitud}
+
+\begin{markdowncell}
+Los documentos teóricos enfatizan el principio de parsimonia: elegir el modelo más simple que capture adecuadamente la dinámica de la serie. Para comparar modelos se utilizan AIC y BIC.
+\end{markdowncell}
+
+\begin{latexcell}
+El AIC se define como:
+\[
+AIC = -2\ln(\hat{L}) + 2k
+\]
+El BIC se define como:
+\[
+BIC = -2\ln(\hat{L}) + k\ln(n)
+\]
+donde \(\hat{L}\) es la verosimilitud maximizada, \(k\) es el número de parámetros y \(n\) es el tamaño de muestra.
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+print("ARIMA AIC:", resultado_arima.aic)
+print("ARIMA BIC:", resultado_arima.bic)
+
+print("SARIMA AIC:", resultado_sarima.aic)
+print("SARIMA BIC:", resultado_sarima.bic)
+
+print("SARIMAX AIC:", resultado_sarimax.aic)
+print("SARIMAX BIC:", resultado_sarimax.bic)
+\end{lstlisting}
+
+\begin{interpretacion}
+Un menor AIC o BIC indica mejor balance entre ajuste y complejidad. El BIC penaliza más fuerte la inclusión de parámetros adicionales, por lo que tiende a preferir modelos más conservadores.
+\end{interpretacion}
+
+% =====================================================
+\section{Diagnóstico de residuos}
+
+\begin{markdowncell}
+Después de estimar un modelo, los residuos deben comportarse como ruido blanco. Si los residuos presentan autocorrelación, el modelo no capturó toda la estructura temporal.
+\end{markdowncell}
+
+\begin{latexcell}
+La hipótesis nula de la prueba Ljung-Box es:
+\[
+H_0: \rho_1=\rho_2=\cdots=\rho_m=0
+\]
+es decir, no existe autocorrelación significativa en los residuos hasta el rezago \(m\).
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+residuos = resultado_sarimax.resid.dropna()
+
+# Ljung-Box
+lb = acorr_ljungbox(residuos, lags=[10, 20], return_df=True)
+print(lb)
+
+# ACF y PACF de residuos
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+plot_acf(residuos, lags=40, ax=axes[0])
+plot_pacf(residuos, lags=40, ax=axes[1], method="ywm")
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+\begin{interpretacion}
+Si el \textit{p-value} de Ljung-Box es mayor a 0.05, no se rechaza la hipótesis nula de ausencia de autocorrelación residual. Esto sugiere que el modelo es razonablemente adecuado.
+\end{interpretacion}
+
+% =====================================================
+\section{Pronóstico}
+
+\begin{markdowncell}
+Una vez validado el modelo, se genera el pronóstico. En SARIMAX, si el modelo usa variables exógenas, también se requieren valores futuros de esas variables.
+\end{markdowncell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Horizonte de pronóstico
+h = 30
+
+# Supuesto simple para variables exógenas futuras:
+# promedio histórico de promo y holiday
+future_exog = pd.DataFrame({
+    "promo": [X["promo"].mean()] * h,
+    "holiday": [0] * h
+})
+
+forecast = resultado_sarimax.get_forecast(steps=h, exog=future_exog)
+pred = forecast.predicted_mean
+ic = forecast.conf_int()
+
+plt.figure(figsize=(12, 6))
+plt.plot(y, label="Histórico")
+plt.plot(pred, label="Pronóstico", color="red")
+plt.fill_between(ic.index, ic.iloc[:, 0], ic.iloc[:, 1], alpha=0.2)
+plt.title("Pronóstico SARIMAX de ventas")
+plt.legend()
+plt.show()
+\end{lstlisting}
+
+% =====================================================
+\section{Ejercicios de Python: series financieras y ventas simuladas}
+
+\begin{markdowncell}
+El archivo \texttt{Preguntas\_pyhton.pdf} contiene ejercicios prácticos en Python. En la Pregunta 5 se descarga una serie financiera mensual del S\&P 500 con \texttt{yfinance}, se grafica la serie y se analizan ACF y PACF. En la Pregunta 6 se simula una serie mensual de ventas con tendencia, estacionalidad y ruido, también analizada con ACF y PACF.
+\end{markdowncell}
+
+\subsection{Serie financiera mensual}
+
+\begin{lstlisting}[style=pythonstyle]
+import yfinance as yf
+
+ticker_symbol = "^GSPC"
+start_date = "2000-01-01"
+end_date = "2024-01-01"
+
+data = yf.download(
+    ticker_symbol,
+    start=start_date,
+    end=end_date,
+    progress=False
+)["Close"]
+
+monthly_series = data.resample("MS").first().dropna()
+monthly_series.name = f"{ticker_symbol} Cierre Mensual"
+
+plt.figure(figsize=(12, 6))
+plt.plot(monthly_series)
+plt.title(f"Serie de Cierre Mensual de {ticker_symbol}")
+plt.xlabel("Fecha")
+plt.ylabel("Precio de cierre")
+plt.grid(True)
+plt.show()
+\end{lstlisting}
+
+\subsection{Serie mensual simulada con tendencia y estacionalidad}
+
+\begin{lstlisting}[style=pythonstyle]
+n_months = 12 * 10
+np.random.seed(45)
+
+dates_monthly = pd.date_range(
+    start="2010-01-01",
+    periods=n_months,
+    freq="MS"
+)
+
+trend = np.linspace(500, 1500, n_months)
+seasonal_amplitude = 100
+seasonal = seasonal_amplitude * np.sin(
+    np.linspace(0, 2 * np.pi * (n_months / 12), n_months) + np.pi / 2
+)
+noise = np.random.normal(0, 30, n_months)
+
+sales_series_simulated = pd.Series(
+    trend + seasonal + noise,
+    index=dates_monthly,
+    name="Ventas Mensuales Simuladas"
+)
+
+fig, axes = plt.subplots(3, 1, figsize=(14, 12))
+sales_series_simulated.plot(ax=axes[0], title="Serie simulada")
+plot_acf(sales_series_simulated, lags=36, ax=axes[1])
+plot_pacf(sales_series_simulated, lags=36, ax=axes[2], method="ywm")
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+\begin{interpretacion}
+Estos ejercicios son de Series de Tiempo porque se enfocan en periodicidad, tendencia, estacionalidad, ACF y PACF. No pertenecen a Cálculo Estocástico, porque no trabajan con Movimiento Browniano, Lema de Itô, valuación de opciones o simulación neutral al riesgo.
+\end{interpretacion}
+
+% =====================================================
+\section{Caso aplicado: ARIMA y SARIMA sobre AAPL}
+
+\begin{markdowncell}
+El archivo \texttt{arima\_sarima\_aapl.tex} desarrolla un informe aplicado a una serie financiera real. Su objetivo es mostrar cómo se construye un modelo ARIMA básico, cómo se compara con otros modelos usando AIC/BIC y cómo se extiende hacia SARIMA cuando existe componente estacional.
+\end{markdowncell}
+
+\begin{latexcell}
+Para una serie financiera \(P_t\), normalmente se trabaja con log-retornos:
+\[
+r_t = \ln\left(\frac{P_t}{P_{t-1}}\right)
+\]
+Los precios suelen ser no estacionarios, mientras que los rendimientos tienden a ser más cercanos a la estacionariedad.
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+# Esquema general para una acción como AAPL
+ticker = "AAPL"
+data = yf.download(ticker, start="2020-01-01", end="2024-01-01", progress=False)
+
+prices = data["Close"].dropna()
+returns = np.log(prices / prices.shift(1)).dropna()
+
+# ADF en precios y retornos
+print("ADF precios:", adfuller(prices)[1])
+print("ADF retornos:", adfuller(returns)[1])
+
+# Modelo ARIMA sobre retornos
+modelo_aapl = ARIMA(returns, order=(1, 0, 1))
+resultado_aapl = modelo_aapl.fit()
+print(resultado_aapl.summary())
+\end{lstlisting}
+
+\begin{interpretacion}
+En series financieras, es común que el precio no sea estacionario, pero los retornos sí lo sean. Por eso la modelación suele hacerse sobre retornos cuando el objetivo es capturar dinámica estadística, riesgo o volatilidad.
+\end{interpretacion}
+
+% =====================================================
+\section{Extensión financiera: ARCH y GARCH}
+
+\begin{markdowncell}
+El proyecto de Series de Tiempo también incluye ejercicios sobre ARCH, GARCH, GJR-GARCH, EGARCH y GARCH-M. Estos modelos no explican la media de la serie, sino la varianza condicional, es decir, cómo cambia la volatilidad en el tiempo.
+\end{markdowncell}
+
+\begin{latexcell}
+Un modelo GARCH(1,1) se define como:
+\[
+r_t = \mu + \varepsilon_t
+\]
+\[
+\varepsilon_t = \sigma_t z_t, \qquad z_t \sim N(0,1)
+\]
+\[
+\sigma_t^2 = \omega + \alpha \varepsilon_{t-1}^2 + \beta \sigma_{t-1}^2
+\]
+\end{latexcell}
+
+\begin{latexcell}
+La condición de estacionariedad en covarianza es:
+\[
+\alpha+\beta<1
+\]
+y la varianza incondicional de largo plazo es:
+\[
+\bar{\sigma}^2 = \frac{\omega}{1-\alpha-\beta}
+\]
+\end{latexcell}
+
+\begin{lstlisting}[style=pythonstyle]
+from arch import arch_model
+
+# Modelo GARCH(1,1) sobre retornos porcentuales
+returns_pct = returns * 100
+
+garch = arch_model(
+    returns_pct,
+    vol="GARCH",
+    p=1,
+    q=1,
+    mean="Constant",
+    dist="normal"
+)
+
+res_garch = garch.fit(disp="off")
+print(res_garch.summary())
+\end{lstlisting}
+
+\subsection{GJR-GARCH}
+
+\begin{latexcell}
+El modelo GJR-GARCH incorpora asimetría:
+\[
+\sigma_t^2 =
+\omega + \alpha \varepsilon_{t-1}^2
++ \lambda \varepsilon_{t-1}^2 I_{\{\varepsilon_{t-1}<0\}}
++ \beta \sigma_{t-1}^2
+\]
+Si \(\lambda>0\), las noticias negativas aumentan más la volatilidad que noticias positivas de igual magnitud.
+\end{latexcell}
+
+\subsection{EGARCH}
+
+\begin{latexcell}
+El modelo EGARCH trabaja con el logaritmo de la varianza:
+\[
+\log(\sigma_t^2)
+=
+\omega+\beta\log(\sigma_{t-1}^2)
++\alpha\left(\left|z_{t-1}\right| - E|z_{t-1}|\right)
++\gamma z_{t-1}
+\]
+Una ventaja es que la varianza siempre es positiva, porque:
+\[
+\sigma_t^2 = \exp(\log(\sigma_t^2)) > 0
+\]
+\end{latexcell}
+
+\subsection{GARCH-M}
+
+\begin{latexcell}
+En un modelo GARCH-M, la volatilidad entra directamente en la media:
+\[
+r_t = \mu + \delta \sigma_t + \varepsilon_t
+\]
+El parámetro \(\delta\) representa una prima de riesgo dependiente de la volatilidad.
+\end{latexcell}
+
+% =====================================================
+\section{Value at Risk dinámico}
+
+\begin{markdowncell}
+Los ejercicios del proyecto incluyen VaR dinámico con GARCH. La idea es que el riesgo no se mida con una volatilidad constante, sino con una volatilidad condicional actualizada por el modelo.
+\end{markdowncell}
+
+\begin{latexcell}
+Para una posición \(V\), el VaR paramétrico a un día puede escribirse como:
+\[
+VaR_{\alpha} = -(\mu + q_{\alpha}\sigma_t)V
+\]
+donde \(q_{\alpha}\) es el cuantil de la distribución utilizada.
+\end{latexcell}
+
+\begin{interpretacion}
+Cuando hay clustering de volatilidad, el VaR basado en GARCH suele ser más sensible a episodios recientes de estrés que el VaR histórico de volatilidad constante. Esto es relevante para gestión de riesgos porque el mercado no mantiene el mismo nivel de volatilidad en todo momento.
+\end{interpretacion}
+
+% =====================================================
+\section{Metodología Box-Jenkins}
+
+\begin{markdowncell}
+La metodología Box-Jenkins resume el proceso iterativo para construir modelos ARIMA/SARIMA/SARIMAX. El procedimiento no consiste sólo en estimar un modelo, sino en identificar, estimar, diagnosticar y volver a ajustar si es necesario.
+\end{markdowncell}
+
+\begin{enumerate}
+    \item \textbf{Visualización inicial:} detectar tendencia, estacionalidad, outliers y cambios de régimen.
+    \item \textbf{Transformación:} aplicar logaritmos, diferencias regulares o diferencias estacionales.
+    \item \textbf{Identificación:} usar ACF y PACF para proponer \(p,q,P,Q\).
+    \item \textbf{Estimación:} ajustar varios modelos candidatos.
+    \item \textbf{Selección:} comparar AIC, BIC y log-verosimilitud.
+    \item \textbf{Diagnóstico:} validar residuos con Ljung-Box, ACF/PACF y normalidad.
+    \item \textbf{Pronóstico:} generar predicciones e intervalos de confianza.
+\end{enumerate}
+
+% =====================================================
+\section{Conclusiones}
+
+\begin{interpretacion}
+Los documentos integrados muestran que la modelación de Series de Tiempo requiere una secuencia ordenada: primero se comprende la estructura de la serie, después se evalúa estacionariedad, luego se identifican patrones con ACF y PACF, y finalmente se estiman modelos ARIMA, SARIMA o SARIMAX.
+
+La base de ventas permite aplicar este marco a un problema comercial real: pronosticar ventas considerando patrones temporales, promociones y días festivos. Los documentos financieros complementan el análisis al mostrar cómo ARIMA/SARIMA también se aplica a precios y retornos, mientras que GARCH y sus extensiones permiten modelar volatilidad financiera y riesgo dinámico.
+
+En conjunto, el proyecto documenta el uso de Series de Tiempo desde dos perspectivas: una económica/comercial, enfocada en ventas y pronóstico, y otra financiera, enfocada en retornos, volatilidad y riesgo.
+\end{interpretacion}
+
+% =====================================================
+\section{Referencias}
+
+\begin{itemize}
+    \item Box, G. E. P., Jenkins, G. M., Reinsel, G. C. y Ljung, G. M. \textit{Time Series Analysis: Forecasting and Control}.
+    \item Hamilton, J. D. \textit{Time Series Analysis}.
+    \item Hyndman, R. J. y Athanasopoulos, G. \textit{Forecasting: Principles and Practice}.
+    \item Tsay, R. S. \textit{Analysis of Financial Time Series}.
+    \item Enders, W. \textit{Applied Econometric Time Series}.
+    \item Documentos fuente proporcionados: \texttt{Reporte\_Sarima.pdf}, \texttt{Proyecto\_ST.tex}, \texttt{Proyecto\_ST.pdf}, \texttt{arima\_sarima\_aapl.tex}, \texttt{Preguntas\_pyhton.pdf}, \texttt{DATABASE\_STORE\_SALES.csv}, \texttt{README(1).md}.
+\end{itemize}
+
+% =====================================================
+\appendix
+\section{Apéndice: checklist para ejecutar en Colab}
+
+\begin{enumerate}
+    \item Subir \texttt{DATABASE\_STORE\_SALES.csv}.
+    \item Instalar \texttt{yfinance} y \texttt{arch}.
+    \item Importar librerías.
+    \item Leer y limpiar la base.
+    \item Agregar ventas por fecha.
+    \item Graficar la serie.
+    \item Aplicar prueba ADF.
+    \item Revisar ACF/PACF.
+    \item Estimar ARIMA.
+    \item Estimar SARIMA.
+    \item Estimar SARIMAX con \texttt{promo} y \texttt{holiday}.
+    \item Diagnosticar residuos.
+    \item Generar pronóstico.
+    \item Para series financieras, descargar AAPL o S\&P 500 con \texttt{yfinance}.
+    \item Estimar modelos GARCH si el objetivo es volatilidad.
+\end{enumerate}
+
+\end{document}
